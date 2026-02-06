@@ -2,7 +2,7 @@
 Pydantic schemas for request/response validation.
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from decimal import Decimal
 from datetime import datetime
@@ -38,7 +38,7 @@ class SellerResponse(BaseModel):
     is_active: bool
     created_at: datetime
     product_count: int
-    
+
     class Config:
         from_attributes = True
 
@@ -56,8 +56,15 @@ class ProductBase(BaseModel):
     """Base product schema."""
     name: str = Field(..., min_length=1, max_length=200)
     description: Optional[str] = None
-    price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    price: Optional[float] = Field(None, ge=0)
     currency: str = Field(default="USD", max_length=3)
+    
+    @field_validator('price')
+    @classmethod
+    def round_price(cls, v):
+        if v is not None:
+            return round(v, 2)
+        return v
 
 
 class ProductCreate(ProductBase):
@@ -71,8 +78,15 @@ class ProductUpdate(BaseModel):
     """Schema for updating product info."""
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
-    price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    price: Optional[float] = Field(None, ge=0)
     currency: Optional[str] = Field(None, max_length=3)
+    
+    @field_validator('price')
+    @classmethod
+    def round_price(cls, v):
+        if v is not None:
+            return round(v, 2)
+        return v
 
 
 class ProductResponse(BaseModel):
@@ -87,7 +101,7 @@ class ProductResponse(BaseModel):
     created_at: datetime
     can_undo: bool
     seller: Optional[dict] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -138,7 +152,7 @@ class InterestResponse(BaseModel):
     message_sent: bool
     created_at: datetime
     whatsapp_link: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 
@@ -155,7 +169,7 @@ class CatalogProductResponse(BaseModel):
     image_url: str
     seller_name: Optional[str]
     whatsapp_link: str
-    
+
     class Config:
         from_attributes = True
 
@@ -179,7 +193,7 @@ class ActionLogResponse(BaseModel):
     interest_id: Optional[UUID]
     action_data: Optional[str]
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
